@@ -7,11 +7,10 @@ const registerVehicle = async (req, res) => {
 
     //Check if data is present or not
     if (!numberPlate || !vehicleType) {
-      res
-        .status(400)
-        .send(
-          "Invalid request. Either Number Plate or Vehicle Type is missing"
-        );
+      res.status(400).send({
+        message:
+          "Invalid request. Either Number Plate or Vehicle Type is missing",
+      });
       return;
     }
 
@@ -19,32 +18,57 @@ const registerVehicle = async (req, res) => {
     const existedVehicle = await Vehicle.findOne({ numberPlate });
 
     if (existedVehicle) {
-      res
-        .status(403)
-        .send(
-          `Vehicle of number plate ${numberPlate} already parked in the parking space`
-        );
+      res.status(403).send({
+        message: `Vehicle of number plate ${numberPlate} already parked in the parking space`,
+      });
       return;
     }
 
     //Create data for DB
 
-    const CreatedVehicle = await Vehicle.create({ numberPlate, vehicleType });
+    const createdVehicle = await Vehicle.create({ numberPlate, vehicleType });
 
-    if (!CreatedVehicle) {
-      res
-        .status(500)
-        .send(
-          `Something went wrong while registering the Vehicle. Please try again later.`
-        );
+    if (!createdVehicle) {
+      res.status(500).send({
+        message: `Something went wrong while registering the Vehicle. Please try again later.`,
+      });
       return;
     }
 
-    res.status(201).send(`Vehicle is parked in the parking space`);
+    res.status(201).send({ message: `Vehicle is parked in the parking space` });
     return;
+  } catch (error) {
+    console.log(error);
+    res.status(400).send({ message: `${error.message}` });
+  }
+};
+
+const releaseVehicle = async (req, res) => {
+  const { numberPlate } = req.body;
+
+  try {
+    if (!numberPlate) {
+      res
+        .status(400)
+        .send({ message: "Invalid request. Number Plate is missing" });
+      return;
+    }
+
+    const vehicleToRelease = await Vehicle.findOneAndDelete({ numberPlate });
+
+    if (!vehicleToRelease) {
+      res.status(404).send({
+        message: `Vehicle with number plate ${numberPlate} does not exists`,
+      });
+      return;
+    } else {
+      res.status(200).send({
+        message: `${vehicleToRelease.vehicleType} with number plate ${vehicleToRelease.numberPlate} released successfully`,
+      });
+    }
   } catch (error) {
     console.log(error);
   }
 };
 
-module.exports = { registerVehicle };
+module.exports = { registerVehicle, releaseVehicle };
